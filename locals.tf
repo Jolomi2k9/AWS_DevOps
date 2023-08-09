@@ -14,20 +14,15 @@ locals {
           to          = var.ssh_port
           protocol    = "tcp"
           cidr_blocks = [var.access_ip]
-        }                       
-      }
-    }
-    jenkins = {
-      name        = "jenkins_sg"
-      description = "Allow ports 8080"
-      ingress = {
+        }
+
         jenkins = {
           from        = var.jenkins_port
           to          = var.jenkins_port
           protocol    = "tcp"
           cidr_blocks = [var.access_ip]
-        }
+        }                       
       }
-    }         
+    }            
   }
 }
