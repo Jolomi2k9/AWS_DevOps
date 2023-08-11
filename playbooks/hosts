@@ -1,12 +1,12 @@
 [jenkins-server]
-10.0.2.94
+10.0.2.39
 
 [jenkins-server:vars]
 ansible_user=ubuntu
 ansible_ssh_private_key_file=/opt/trkey
 
 [build-server]
-10.0.2.114
+10.0.2.16
 
 [build-server:vars]
 ansible_user=ubuntu

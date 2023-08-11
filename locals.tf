@@ -21,8 +21,8 @@ locals {
           to          = var.jenkins_port
           protocol    = "tcp"
           cidr_blocks = [var.access_ip]
-        }                       
+        }
       }
-    }            
+    }
   }
 }
