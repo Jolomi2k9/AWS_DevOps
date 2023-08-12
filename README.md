@@ -1,4 +1,4 @@
-# Multi-Region Kubernetes Cluster with Canary Deployments for a High-Availability Web Application
+# AWS CI/CD EKS Deployment
 
 
 
