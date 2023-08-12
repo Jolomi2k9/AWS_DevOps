@@ -118,39 +118,109 @@ resource "aws_iam_instance_profile" "worker" {
   role       = aws_iam_role.worker.name
 }
 
-##############################################
+# ##############################################
+# resource "aws_eks_cluster" "eks" {
+#   name = "kube-eks-01"
+#   role_arn = aws_iam_role.control.arn
+
+#   vpc_config {
+#     subnet_ids = [var.public_subnets[0],var.public_subnets[1]]
+#   }
+  
+#   depends_on = [
+#     aws_iam_role_policy_attachment.AmazonEKSClusterPolicy,
+#     aws_iam_role_policy_attachment.AmazonEKSServicePolicy,
+#     aws_iam_role_policy_attachment.AmazonEKSVPCResourceController,
+#     aws_iam_role_policy_attachment.AmazonEKSVPCResourceController,    
+#   ]
+
+# }
+# ################################################
+
+# resource "aws_key_pair" "tr_auth" {      
+#   public_key = file(var.public_key_path)
+# }
+
+# resource "aws_eks_node_group" "backend" {
+#   cluster_name    = aws_eks_cluster.eks.name
+#   node_group_name = "dev"
+#   node_role_arn   = aws_iam_role.worker.arn
+#   subnet_ids = [var.public_subnets[0],var.public_subnets[1]]
+#   capacity_type = "ON_DEMAND"
+#   disk_size = "20"
+#   instance_types = ["t2.small"]
+#   remote_access {
+#     ec2_ssh_key = aws_key_pair.tr_auth.id
+#     source_security_group_ids = [var.public_sg]
+#   } 
+  
+#   labels =  tomap({env = "dev"})
+  
+#   scaling_config {
+#     desired_size = 2
+#     max_size     = 3
+#     min_size     = 1
+#   }
+
+#   update_config {
+#     max_unavailable = 1
+#   }
+
+#   depends_on = [
+#     aws_iam_role_policy_attachment.AmazonEKSWorkerNodePolicy,
+#     aws_iam_role_policy_attachment.AmazonEKS_CNI_Policy,
+#     aws_iam_role_policy_attachment.AmazonEC2ContainerRegistryReadOnly,    
+#   ]
+# }
+
+################################################
 resource "aws_eks_cluster" "eks" {
-  name = "kube-eks-01"
+  count = var.cluster_count  
+  
+  name = "kube-eks-${count.index}"
   role_arn = aws_iam_role.control.arn
 
   vpc_config {
-    subnet_ids = [var.public_subnets[0],var.public_subnets[1]]
+    subnet_ids = element(var.public_subnets, count.index * 2) == null ? [] : [
+      element(var.public_subnets, count.index * 2),
+      element(var.public_subnets, count.index * 2 + 1),
+    ]
   }
-  
+
   depends_on = [
     aws_iam_role_policy_attachment.AmazonEKSClusterPolicy,
     aws_iam_role_policy_attachment.AmazonEKSServicePolicy,
     aws_iam_role_policy_attachment.AmazonEKSVPCResourceController,
-    aws_iam_role_policy_attachment.AmazonEKSVPCResourceController,    
+    aws_iam_role_policy_attachment.AmazonEKSVPCResourceController,
   ]
-
 }
-################################################
 
-resource "aws_key_pair" "tr_auth" {      
+################################################
+resource "aws_key_pair" "tr_auth" {
+  count = var.cluster_count  
+  
   public_key = file(var.public_key_path)
 }
 
+################################################
 resource "aws_eks_node_group" "backend" {
-  cluster_name    = aws_eks_cluster.eks.name
+  count = var.cluster_count  
+  
+  cluster_name    = aws_eks_cluster.eks[count.index].name
   node_group_name = "dev"
   node_role_arn   = aws_iam_role.worker.arn
-  subnet_ids = [var.public_subnets[0],var.public_subnets[1]]
+  
+  subnet_ids = element(var.public_subnets, count.index * 2) == null ? [] : [
+    element(var.public_subnets, count.index * 2),
+    element(var.public_subnets, count.index * 2 + 1),
+  ]
+
   capacity_type = "ON_DEMAND"
   disk_size = "20"
   instance_types = ["t2.small"]
+  
   remote_access {
-    ec2_ssh_key = aws_key_pair.tr_auth.id
+    ec2_ssh_key = aws_key_pair.tr_auth[count.index].id
     source_security_group_ids = [var.public_sg]
   } 
   
@@ -169,6 +239,6 @@ resource "aws_eks_node_group" "backend" {
   depends_on = [
     aws_iam_role_policy_attachment.AmazonEKSWorkerNodePolicy,
     aws_iam_role_policy_attachment.AmazonEKS_CNI_Policy,
-    aws_iam_role_policy_attachment.AmazonEC2ContainerRegistryReadOnly,    
+    aws_iam_role_policy_attachment.AmazonEC2ContainerRegistryReadOnly,
   ]
 }
